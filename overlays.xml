@@ -8,6 +8,6 @@
     <owner type="project">
         <email>kai@redstar.de</email>
     </owner>
-    <source type="git">git://github.com/ldc-developers/ldc-overlay.git</source>
+    <source type="git">git://github.com/ldc-developers/gentoo-overlay.git</source>
 </repo>
 </repositories>
