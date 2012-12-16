@@ -24,7 +24,7 @@ DEPEND=">=dev-util/cmake-2.8
 
 src_configure() {
 	cd "${S}"
-	cmake-utils_src_configure -DD_VERSION=2 -DCMAKE_INSTALL_PREFIX:PATH="/usr" -DINCLUDE_INSTALL_DIR=/usr/include/ldc2 -DLIB_SUFFIX=64 ./
+	cmake-utils_src_configure -DD_VERSION=2 -DCMAKE_INSTALL_PREFIX="/usr" -DINCLUDE_INSTALL_DIR=/usr/include/ldc2 -DLIB_SUFFIX=64 ./
 }
 
 src_compile() {
