@@ -1,7 +1,7 @@
 # Copyright 1999-2009 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
-EAPI="2"
+EAPI=4
 
 inherit cmake-utils
 
@@ -23,16 +23,17 @@ DEPEND=">=dev-util/cmake-2.8
         ${RDEPEND}"
 
 src_configure() {
-	cd "${S}"
-	cmake-utils_src_configure -DD_VERSION=2 -DCMAKE_INSTALL_PREFIX="/usr" -DINCLUDE_INSTALL_DIR=/usr/include/ldc2 -DLIB_SUFFIX=64 ./
+	local mycmakeargs=(
+            -DD_VERSION=2
+            -DINCLUDE_INSTALL_DIR=/usr/include/ldc2
+        )
+	cmake-utils_src_configure
 }
 
 src_compile() {
-	cd "${S}"
 	cmake-utils_src_make
 }
 
 src_install() {
-	cd "${S}"
-        cmake-utils_src_install DESTDIR="${D}"
+        cmake-utils_src_install
 }
