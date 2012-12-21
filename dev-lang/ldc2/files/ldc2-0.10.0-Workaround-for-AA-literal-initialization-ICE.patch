@@ -1,0 +1,41 @@
+From e068df24b21701f002b4a667794c5d9144947714 Mon Sep 17 00:00:00 2001
+From: David Nadlinger <code@klickverbot.at>
+Date: Wed, 19 Dec 2012 02:09:19 +0100
+Subject: [PATCH 04/25] Workaround for AA literal initialization ICE.
+
+Just executing toConstElem speculatively in
+AssocArrayLiteralExp::toElem probably isn't the best idea
+anyway, I would not be surprised if there are other similar bugs.
+
+GitHub: Fixes #248.
+---
+ gen/toir.cpp           |   12 ++++++++++++
+ tests/d2/dmd-testsuite |    2 +-
+ 2 files changed, 13 insertions(+), 1 deletions(-)
+
+diff --git a/gen/toir.cpp b/gen/toir.cpp
+index 8d68ded..2407c37 100644
+--- a/gen/toir.cpp
++++ b/gen/toir.cpp
+@@ -1293,6 +1293,18 @@ LLConstant* AddrExp::toConstElem(IRState* p)
+         // global variable
+         if (VarDeclaration* vd = vexp->var->isVarDeclaration())
+         {
++            if (!vd->isDataseg())
++            {
++                // Not sure if this can be triggered from user code, but it is
++                // needed for the current hacky implementation of
++                // AssocArrayLiteralExp::toElem, which requires on error
++                // gagging to check for constantness of the initializer.
++                error("cannot use address of non-global variable '%s' "
++                    "as constant initializer", vd->toChars());
++                if (!global.gag) fatal();
++                return NULL;
++            }
++
+             vd->codegen(Type::sir);
+             LLConstant* llc = llvm::dyn_cast<LLConstant>(vd->ir.getIrValue());
+             assert(llc);
+-- 
+1.7.8.6
+

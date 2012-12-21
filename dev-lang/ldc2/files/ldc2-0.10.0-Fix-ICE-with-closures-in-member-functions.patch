@@ -1,0 +1,61 @@
+From 9cbfc604c7dea97ffc4b7c4dba99f42861021cd4 Mon Sep 17 00:00:00 2001
+From: David Nadlinger <code@klickverbot.at>
+Date: Wed, 19 Dec 2012 20:19:33 +0100
+Subject: [PATCH 06/25] Fix ICE with closures in member functions.
+
+I chose to fix the problem this way because it increases uniformity
+between 'this' and normal explicit parameters. Another possibility
+would be to just change the type determinatin code in
+DtoCreateNestedContextType to not expect the value to be already
+present, because it doesn't need it when isVthisPtr is true anyway.
+
+GitHub: Fixes #217.
+---
+ gen/functions.cpp      |   22 +++++++++++++++++-----
+ tests/d2/dmd-testsuite |    2 +-
+ 2 files changed, 18 insertions(+), 6 deletions(-)
+
+diff --git a/gen/functions.cpp b/gen/functions.cpp
+index ac339a7..0e89c4a 100644
+--- a/gen/functions.cpp
++++ b/gen/functions.cpp
+@@ -755,7 +755,22 @@ void DtoDeclareFunction(FuncDeclaration* fdecl)
+         if (f->fty.arg_this) {
+             iarg->setName(".this_arg");
+             fdecl->ir.irFunc->thisArg = iarg;
+-            assert(fdecl->ir.irFunc->thisArg);
++
++            VarDeclaration* v = fdecl->vthis;
++            if (v) {
++                // We already build the this argument here if we will need it
++                // later for codegen'ing the function, just as normal
++                // parameters below, because it can be referred to in nested
++                // context types. Will be given storage in DtoDefineFunction.
++                assert(!v->ir.irParam);
++                IrParameter* p = new IrParameter(v);
++                p->isVthis = true;
++                p->value = iarg;
++                p->arg = f->fty.arg_this;
++
++                v->ir.irParam = p;
++            }
++
+             ++iarg;
+         }
+         else if (f->fty.arg_nest) {
+@@ -904,11 +919,8 @@ void DtoDefineFunction(FuncDeclaration* fd)
+             irfunction->thisArg = thismem;
+         }
+ 
+-        assert(!fd->vthis->ir.irParam);
+-        fd->vthis->ir.irParam = new IrParameter(fd->vthis);
++        assert(fd->vthis->ir.irParam->value == thisvar);
+         fd->vthis->ir.irParam->value = thismem;
+-        fd->vthis->ir.irParam->arg = f->fty.arg_this;
+-        fd->vthis->ir.irParam->isVthis = true;
+ 
+         DtoDwarfLocalVariable(thismem, fd->vthis);
+     }
+-- 
+1.7.8.6
+

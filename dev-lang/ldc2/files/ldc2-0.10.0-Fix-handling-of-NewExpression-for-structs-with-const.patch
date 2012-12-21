@@ -1,0 +1,31 @@
+From fb363972f050baa0a5167db3bbd391ac7a3a9861 Mon Sep 17 00:00:00 2001
+From: David Nadlinger <code@klickverbot.at>
+Date: Wed, 19 Dec 2012 20:57:52 +0100
+Subject: [PATCH 08/25] Fix handling of NewExpression for structs with
+ constructors.
+
+The frontend treats the constructor as returning a reference to
+the new instance, we just want the memory, i.e. a pointer.
+
+GitHub: Fixes #246.
+---
+ gen/toir.cpp           |    2 +-
+ tests/d2/dmd-testsuite |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gen/toir.cpp b/gen/toir.cpp
+index 2407c37..8f80e39 100644
+--- a/gen/toir.cpp
++++ b/gen/toir.cpp
+@@ -2029,7 +2029,7 @@ DValue* NewExp::toElem(IRState* p)
+             assert(arguments != NULL);
+             member->codegen(Type::sir);
+             DFuncValue dfn(member, member->ir.irFunc->func, mem);
+-            return DtoCallFunction(loc, ts, &dfn, arguments);
++            DtoCallFunction(loc, ts, &dfn, arguments);
+         }
+ #endif
+         return new DImValue(type, mem);
+-- 
+1.7.8.6
+
