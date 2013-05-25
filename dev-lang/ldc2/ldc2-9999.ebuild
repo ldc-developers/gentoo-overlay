@@ -16,7 +16,7 @@ SLOT="0"
 KEYWORDS="~arm ~x86 ~amd64 ~ppc ~sparc"
 IUSE=""
 
-RDEPEND=">=sys-devel/llvm-3.0
+RDEPEND=">=sys-devel/llvm-3.1
          >=dev-libs/libconfig-1.4.7"
 DEPEND=">=dev-util/cmake-2.8
         ${RDEPEND}"
