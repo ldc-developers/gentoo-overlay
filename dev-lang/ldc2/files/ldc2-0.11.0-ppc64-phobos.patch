@@ -1,0 +1,13 @@
+diff --git a/runtime/phobos/std/math.d b/runtime/phobos/std/math.d
+index 9b8d448..cb86de3 100644
+--- a/runtime/phobos/std/math.d
++++ b/runtime/phobos/std/math.d
+@@ -2369,7 +2369,7 @@ real hypot(real x, real y) @safe pure nothrow
+     static assert(2*(SQRTMAX/2)*(SQRTMAX/2) <= real.max);
+
+     // Proves that sqrt(real.max) ~~  0.5/sqrt(real.min_normal)
+-    static assert(real.min_normal*real.max > 2 && real.min_normal*real.max <= 4);
++    //static assert(real.min_normal*real.max > 2 && real.min_normal*real.max <= 4);
+
+     real u = fabs(x);
+     real v = fabs(y);

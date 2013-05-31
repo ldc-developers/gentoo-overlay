@@ -1,0 +1,11 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 579acc2..6ee95d9 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -429,5 +429,5 @@ install(FILES ${PROJECT_BINARY_DIR}/bin/${LDC_EXE}_install.conf DESTINATION ${CO
+ install(FILES ${PROJECT_BINARY_DIR}/bin/${LDC_EXE}_install.rebuild.conf DESTINATION ${CONF_INST_DIR} RENAME ${LDC_EXE}.rebuild.conf)
+ 
+ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+-    install(DIRECTORY bash_completion.d DESTINATION ${CONF_INST_DIR})
++    install(DIRECTORY bash_completion.d DESTINATION "/usr/share/bash-completion")
+ endif()
