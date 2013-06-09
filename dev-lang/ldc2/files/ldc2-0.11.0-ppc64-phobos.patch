@@ -11,3 +11,24 @@ index 9b8d448..cb86de3 100644
 
      real u = fabs(x);
      real v = fabs(y);
+diff --git a/runtime/phobos/std/outbuffer.d b/runtime/phobos/std/outbuffer.d
+index 4d8f37c..27260ce 100644
+--- a/runtime/phobos/std/outbuffer.d
++++ b/runtime/phobos/std/outbuffer.d
+@@ -318,6 +318,16 @@ class OutBuffer
+                 va_end(ap);
+             }
+         }
++        else version (PPC64)
++        {
++            extern (C) void printf(string format, ...)
++            {
++                va_list ap;
++                va_start(ap, format);
++                vprintf(format, ap);
++                va_end(ap);
++            }
++        }
+         else
+         {
+             void printf(string format, ...)

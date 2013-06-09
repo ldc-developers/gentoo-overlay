@@ -1,5 +1,5 @@
 diff --git a/runtime/druntime/src/core/sys/posix/fcntl.d b/runtime/druntime/src/core/sys/posix/fcntl.d
-index 5bd4571..7962926 100644
+index 5bd4571..7672289 100644
 --- a/runtime/druntime/src/core/sys/posix/fcntl.d
 +++ b/runtime/druntime/src/core/sys/posix/fcntl.d
 @@ -114,6 +114,19 @@ version( linux )
@@ -17,47 +17,47 @@ index 5bd4571..7962926 100644
 +        enum O_NONBLOCK     = 0x800;    // octal    04000
 +        enum O_SYNC         = 0x101000; // octal 04010000
 +        enum O_DSYNC        = 0x1000;   // octal   010000
-+        enum O_RSYNC        = O_DSYNC;
++        enum O_RSYNC        = O_SYNC;
 +    }
      else
      {
          enum O_CREAT        = 0x40;   // octal   0100
 diff --git a/runtime/druntime/src/core/sys/posix/ucontext.d b/runtime/druntime/src/core/sys/posix/ucontext.d
-index 0aa2e58..eaf2ad1 100644
+index 0aa2e58..45b0512 100644
 --- a/runtime/druntime/src/core/sys/posix/ucontext.d
 +++ b/runtime/druntime/src/core/sys/posix/ucontext.d
 @@ -270,6 +270,73 @@ version( linux )
              sigset_t    uc_sigmask;
          }
      }
-+    else version (PPC64) {
++    else version (PPC64)
++    {
 +        private
 +        {
 +            enum NGREG  = 48;
 +            enum NFPREG = 33;
 +            enum NVRREG = 34;
 +
-+            alias ulong          greg_t;
++            alias c_ulong        greg_t;
 +            alias greg_t[NGREG]  gregset_t;
 +            alias double[NFPREG] fpregset_t;
 +
-+            struct _libc_vscr
++            struct vscr_t
 +            {
 +                uint[3] __pad;
 +                uint    vscr_word;
 +            }
-+            alias _libc_vscr vscr_t;
 +
-+            struct _libc_vrstate
++            struct vrregset_t
 +            {
 +                uint[32][4] vrregs;
 +                vscr_t      vscr;
 +                uint        vrsave;
 +                uint[3]     __pad;
 +            }
-+            alias _libc_vrstate vrregset_t;
 +
-+            struct pt_regs {
++            struct pt_regs
++            {
 +                c_ulong[32] gpr;
 +                c_ulong     nip;
 +                c_ulong     msr;
@@ -85,7 +85,7 @@ index 0aa2e58..eaf2ad1 100644
 +            gregset_t gp_regs;
 +            fpregset_t fp_regs;
 +            vrregset_t *v_regs;
-+            long[NVRREG+NVRREG+1] vmx_reserve;
++            c_long[NVRREG+NVRREG+1] vmx_reserve;
 +        }
 +
 +        struct ucontext_t
@@ -101,10 +101,10 @@ index 0aa2e58..eaf2ad1 100644
          static assert(0, "unimplemented");
  }
 diff --git a/runtime/druntime/src/core/thread.d b/runtime/druntime/src/core/thread.d
-index 68aff90..af39567 100644
+index 68aff90..b1a5179 100644
 --- a/runtime/druntime/src/core/thread.d
 +++ b/runtime/druntime/src/core/thread.d
-@@ -3210,6 +3210,14 @@ private
+@@ -3210,6 +3210,13 @@ private
              version = AsmExternal;
          }
      }
@@ -112,15 +112,127 @@ index 68aff90..af39567 100644
 +    {
 +        version( Posix )
 +        {
-+            version = AsmPPC_Posix;
-+            version = AsmExternal;
++            version = AlignFiberStackTo16Byte;
 +        }
 +    }
      else version( MIPS_O32 )
      {
          version( Posix )
+@@ -4412,7 +4419,12 @@ version (D_LP64)
+     else version (OSX)
+         static assert(__traits(classInstanceSize, Fiber) == 88);
+     else version (Posix)
+-        static assert(__traits(classInstanceSize, Fiber) == 88);
++    {
++        static if( __traits( compiles, ucontext_t ) )
++            static assert(__traits(classInstanceSize, Fiber) == 88 + ucontext_t.sizeof + 8);
++        else
++            static assert(__traits(classInstanceSize, Fiber) == 88);
++    }
+     else
+         static assert(0, "Platform not supported.");
+ }
+@@ -4425,7 +4437,12 @@ else
+     else version (OSX)
+         static assert(__traits(classInstanceSize, Fiber) == 44);
+     else version (Posix)
+-        static assert(__traits(classInstanceSize, Fiber) == 44);
++    {
++        static if( __traits( compiles, ucontext_t ) )
++            static assert(__traits(classInstanceSize, Fiber) == 44 + ucontext_t.sizeof + 4);
++        else
++            static assert(__traits(classInstanceSize, Fiber) == 44);
++    }
+     else
+         static assert(0, "Platform not supported.");
+ }
+diff --git a/runtime/druntime/src/core/thread.di b/runtime/druntime/src/core/thread.di
+index f402cb5..74af084 100644
+--- a/runtime/druntime/src/core/thread.di
++++ b/runtime/druntime/src/core/thread.di
+@@ -798,6 +798,50 @@ private:
+ // Fiber Platform Detection and Memory Allocation
+ ///////////////////////////////////////////////////////////////////////////////
+
++private
++{
++    // These must be kept in sync with core/thread.d
++    version( D_InlineAsm_X86 )
++    {
++        version( Windows )
++            version = NoUcontext;
++        else version( Posix )
++            version = NoUcontext;
++    }
++    else version( D_InlineAsm_X86_64 )
++    {
++        version( Windows )
++            version = NoUcontext;
++        else version( Posix )
++            version = NoUcontext;
++    }
++    else version( PPC )
++    {
++        version( Posix )
++            version = NoUcontext;
++    }
++    else version( PPC64 )
++    {
++        version( Posix )
++        {
++            // uses ucontext_t.
++        }
++    }
++    else version( MIPS_O32 )
++    {
++        version( Posix )
++            version = NoUcontext;
++    }
++
++    version( Posix )
++    {
++        version( NoUcontext )       {} else
++        {
++            import core.sys.posix.ucontext;
++        }
++    }
++}
++
+ private extern __gshared const size_t PAGESIZE;
+
+ shared static this();
+@@ -1035,7 +1079,13 @@ private:
+     {
+         version (Windows)      enum FiberSize = 88;
+         else version (OSX)     enum FiberSize = 88;
+-        else version (Posix)   enum FiberSize = 88;
++        else version (Posix)
++        {
++            static if( __traits( compiles, ucontext_t ) )
++                enum FiberSize = 88 + ucontext_t.sizeof + 8;
++            else
++                enum FiberSize = 88;
++        }
+         else static assert(0, "Platform not supported.");
+     }
+     else
+@@ -1044,7 +1094,13 @@ private:
+
+         version (Windows)      enum FiberSize = 44;
+         else version (OSX)     enum FiberSize = 44;
+-        else version (Posix)   enum FiberSize = 44;
++        else version (Posix)
++        {
++            static if( __traits( compiles, ucontext_t ) )
++                enum FiberSize = 44 + ucontext_t.sizeof + 4;
++            else
++                enum FiberSize = 44;
++        }
+         else static assert(0, "Platform not supported.");
+     }
+
 diff --git a/runtime/druntime/src/core/threadasm.S b/runtime/druntime/src/core/threadasm.S
-index 58342b6..0949603 100644
+index 58342b6..30ca2b7 100644
 --- a/runtime/druntime/src/core/threadasm.S
 +++ b/runtime/druntime/src/core/threadasm.S
 @@ -130,8 +130,144 @@ _D4core6thread18callWithStackShellFMDFPvZvZv:
@@ -142,11 +254,11 @@ index 58342b6..0949603 100644
 + */
 +    .text
 +    .align  2
-+    .globl  fiber_switchContext
++    .globl  fiber_switchContext_
 +    .align  2
-+    .type   fiber_switchContext,@function
++    .type   fiber_switchContext_,@function
 +    .section        .opd,"aw",@progbits
-+fiber_switchContext:
++fiber_switchContext_:
 +    .align  3
 +    .quad   .L.fiber_switchContext
 +    .quad   .TOC.@tocbase
