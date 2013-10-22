@@ -3,13 +3,15 @@
 # $Header: $
 EAPI=4
 
-inherit cmake-utils bash-completion-r1 git-2
+inherit cmake-utils bash-completion-r1
 
-EGIT_REPO_URI="git://github.com/ldc-developers/ldc.git"
-EGIT_HAS_SUBMODULES="true"
+MY_P="ldc-${PV}-src"
+SRC_URI="http://d32gngvpvl2pi1.cloudfront.net/${MY_P}.tar.gz -> ${P}.tar.gz"
+S=${WORKDIR}/${MY_P}
 
 DESCRIPTION="LLVM D Compiler"
 HOMEPAGE="https://ldc-developers.github.com/ldc"
+KEYWORDS="x86 amd64 ~ppc64"
 LICENSE="BSD"
 SLOT="0"
 IUSE=""
@@ -18,6 +20,12 @@ RDEPEND=">=sys-devel/llvm-3.1-r2
 	>=dev-libs/libconfig-1.4.7"
 DEPEND=">=dev-util/cmake-2.8
 	${RDEPEND}"
+
+src_prepare() {
+	EPATCH_OPTS="-p1"
+	epatch "${FILESDIR}/ldc2-${PV}-ppc64-druntime.patch"
+	epatch "${FILESDIR}/ldc2-${PV}-ppc64-phobos.patch"
+}
 
 src_configure() {
 	local mycmakeargs=(
@@ -34,7 +42,6 @@ src_compile() {
 src_install() {
 	cmake-utils_src_install
 
-	[[ -d "${ED}"/usr/share/bash-completion ]] && rm -rf "${ED}"/usr/share/bash-completion
-	[[ -d "${ED}"/etc/bash_completion.d ]] && rm -rf "${ED}"/etc/bash_completion.d
+	rm -rf "${ED}"/etc/bash_completion.d
 	newbashcomp "bash_completion.d/ldc" ${PN}
 }
