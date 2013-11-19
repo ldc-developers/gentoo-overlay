@@ -20,6 +20,7 @@ IUSE=""
 RDEPEND=">=sys-devel/llvm-3.1-r2
 	>=dev-libs/libconfig-1.4.7"
 DEPEND=">=dev-util/cmake-2.8
+	!=dev-util/cmake-2.8.12
 	${RDEPEND}"
 
 src_configure() {
