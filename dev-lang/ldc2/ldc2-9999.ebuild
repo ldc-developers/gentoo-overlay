@@ -36,5 +36,5 @@ src_install() {
 
 	[[ -d "${ED}"/usr/share/bash-completion ]] && rm -rf "${ED}"/usr/share/bash-completion
 	[[ -d "${ED}"/etc/bash_completion.d ]] && rm -rf "${ED}"/etc/bash_completion.d
-	newbashcomp "bash_completion.d/ldc" ${PN}
+	newbashcomp "bash_completion.d/ldc2" ${PN}
 }
