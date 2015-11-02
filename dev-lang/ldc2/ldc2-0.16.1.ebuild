@@ -41,5 +41,5 @@ src_install() {
 	cmake-utils_src_install
 
 	rm -rf "${ED}"/usr/share/bash-completion
-	newbashcomp "bash_completion.d/ldc" ${PN}
+	newbashcomp "bash_completion.d/ldc2" ${PN}
 }
